@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Century+Gothic:wght@400;700&display=swap');
+        
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            font-family: 'Century Gothic', sans-serif;
+        }
+        
+        .leaflet-popup-content-wrapper {
+            font-family: 'Century Gothic', sans-serif;
+        }
+        
+        .leaflet-popup-content {
+            font-family: 'Century Gothic', sans-serif;
+        }
+        
+        .leaflet-tooltip {
+            font-family: 'Century Gothic', sans-serif;
+        }
+        
+        .street-label {
+            font-family: 'Century Gothic', sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        #logo-eti {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            z-index: 9998;
+            cursor: pointer;
+        }
+        
+        #logo-eti img {
+            height: 55px;
+            width: auto;
+        }
+        
+        /* Leyenda de capas */
+        .legend {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Century Gothic', sans-serif;
+            font-size: 13px;
+            z-index: 9997;
+            min-width: 220px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .legend h4 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        
+        .legend-section {
+            margin-bottom: 15px;
+        }
+        
+        .legend-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .legend-section h5 {
+            margin: 0 0 8px 0;
+            font-size: 13px;
+            font-weight: bold;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            cursor: pointer;
+            padding: 3px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+        
+        .legend-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .legend-item input[type="checkbox"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        
+        .legend-line {
+            width: 20px;
+            height: 3px;
+            margin-right: 8px;
+            border-radius: 1px;
+        }
+        
+        .legend-text {
+            flex-grow: 1;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .legend-dashed-line {
+            width: 20px;
+            height: 3px;
+            margin-right: 8px;
+            border-radius: 1px;
+            background-image: repeating-linear-gradient(
+                to right,
+                transparent,
+                transparent 3px,
+                currentColor 3px,
+                currentColor 6px
+            );
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        
+        <!-- Leyenda de capas -->
+        <div class="legend" id="layers-legend">
+            <h4>Capas</h4>
+            
+            <div class="legend-section">
+                <h5>Calles</h5>
+                <div class="legend-item" data-street="Calle José de Diego">
+                    <input type="checkbox" checked id="check-jose-diego">
+                    <div class="legend-line" style="background-color: #E91E63;"></div>
+                    <span class="legend-text">Calle José de Diego</span>
+                </div>
+                <div class="legend-item" data-street="Calle José Tous Soto">
+                    <input type="checkbox" checked id="check-jose-tous">
+                    <div class="legend-line" style="background-color: #4CAF50;"></div>
+                    <span class="legend-text">Calle José Tous Soto</span>
+                </div>
+                <div class="legend-item" data-street="Calle Muñoz Rivera">
+                    <input type="checkbox" checked id="check-munoz-rivera">
+                    <div class="legend-line" style="background-color: #9C27B0;"></div>
+                    <span class="legend-text">Calle Muñoz Rivera</span>
+                </div>
+                <div class="legend-item" data-street="PR-181">
+                    <input type="checkbox" checked id="check-pr-181">
+                    <div class="legend-line" style="background-color: #FF9800;"></div>
+                    <span class="legend-text">PR-181</span>
+                </div>
+                <div class="legend-item" data-street="PR-183">
+                    <input type="checkbox" checked id="check-pr-183">
+                    <div class="legend-line" style="background-color: #8BC34A;"></div>
+                    <span class="legend-text">PR-183</span>
+                </div>
+                <div class="legend-item" data-street="PR-9929">
+                    <input type="checkbox" checked id="check-pr-9929">
+                    <div class="legend-line" style="background-color: #2196F3;"></div>
+                    <span class="legend-text">PR-9929</span>
+                </div>
+            </div>
+            
+            <div class="legend-section">
+                <h5>CUT (Límites)</h5>
+                <div class="legend-item" data-layer="CUT_vivienda">
+                    <input type="checkbox" checked id="check-cut-vivienda">
+                    <div class="legend-dashed-line" style="color: #ff0061;"></div>
+                    <span class="legend-text">CUT Vivienda</span>
+                </div>
+                <div class="legend-item" data-layer="CUT_POT">
+                    <input type="checkbox" checked id="check-cut-pot">
+                    <div class="legend-dashed-line" style="color: #145995;"></div>
+                    <span class="legend-text">CUT POT</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Logo de Estudios Técnicos Inc. -->
+        <div id="logo-eti">
+            <a href="https://www.estudiostecnicos.com" target="_blank">
+                <img src="https://estudiostecnicos.com/wp-content/uploads/2021/01/logo-trasnparente.png" alt="Estudios Técnicos Inc.">
+            </a>
+        </div>
+        
+        <!-- Banner de aviso -->
+        <div id="banner-aviso" style="
+            position: fixed;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #999;
+            border-left: 5px solid #E81426;
+            padding: 10px 14px;
+            font-family: 'Century Gothic', sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            border-radius: 6px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            max-width: 320px;">
+            <span style="margin-right: 8px; color: #E81426; font-size: 18px; transform: scale(1.3); display: inline-block;">⚠️</span>
+            <span style="flex-grow: 1;">El contenido mostrado es referencial y no representa información oficial.</span>
+        </div>
+        
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="data/Municipalities_JP_2023_0.js"></script>
+        <script src="data/Calles_municipio_2.js"></script>
+        <script src="data/CUT_vivienda_3.js"></script>
+        <script src="data/CUT_POT_4.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[18.17949310592907,-65.9719724015276],[18.19676080420024,-65.94809784562294]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        function pop_Municipalities_JP_2023_0(feature, layer) {
+            // Popup eliminado - sin funcionalidad de popup
+        }
+
+        function style_Municipalities_JP_2023_0_0() {
+            return {
+                pane: 'pane_Municipalities_JP_2023_0',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 4.0, 
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
+        map.createPane('pane_Municipalities_JP_2023_0');
+        map.getPane('pane_Municipalities_JP_2023_0').style.zIndex = 405;
+        map.getPane('pane_Municipalities_JP_2023_0').style['mix-blend-mode'] = 'normal';
+        var layer_Municipalities_JP_2023_0 = new L.geoJson(json_Municipalities_JP_2023_0, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_Municipalities_JP_2023_0',
+            layerName: 'layer_Municipalities_JP_2023_0',
+            pane: 'pane_Municipalities_JP_2023_0',
+            onEachFeature: pop_Municipalities_JP_2023_0,
+            style: style_Municipalities_JP_2023_0_0,
+        });
+        bounds_group.addLayer(layer_Municipalities_JP_2023_0);
+        map.addLayer(layer_Municipalities_JP_2023_0);
+        map.createPane('pane_GoogleMaps_1');
+        map.getPane('pane_GoogleMaps_1').style.zIndex = 401;
+        var layer_GoogleMaps_1 = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleMaps_1',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_GoogleMaps_1;
+        map.addLayer(layer_GoogleMaps_1);
+        
+        // Función para obtener color de ruta basado en el nombre (colores más vibrantes)
+        function getRouteColor(routeName) {
+            var colors = {
+                'Calle José de Diego': '#E91E63',     // Rosa vibrante
+                'Calle José Tous Soto': '#4CAF50',   // Verde vibrante
+                'Calle Muñoz Rivera': '#9C27B0',     // Púrpura vibrante
+                'PR-181': '#FF9800',                 // Naranja vibrante
+                'PR-183': '#8BC34A',                 // Verde lima vibrante
+                'PR-9929': '#2196F3'                 // Azul vibrante
+            };
+            return colors[routeName] || '#333333';
+        }
+        
+        function pop_Calles_municipio_2(feature, layer) {
+            var routeName = feature.properties['name'];
+            var routeColor = getRouteColor(routeName);
+            
+            var popupContent = '<div style="text-align: center; font-weight: bold; font-size: 14px; color: ' + 
+                              routeColor + '; font-family: \'Century Gothic\', sans-serif;">' + 
+                              (routeName !== null ? routeName : '') + '</div>';
+            
+            layer.on('popupopen', function(e) {
+                addClassToPopupIfMedia(popupContent, e.popup);
+            });
+            layer.bindPopup(popupContent, { maxHeight: 400 });
+        }
+
+        function style_Calles_municipio_2_0(feature) {
+            var routeName = String(feature.properties['name']);
+            var routeColor = getRouteColor(routeName);
+            
+            return {
+                pane: 'pane_Calles_municipio_2',
+                opacity: 1,
+                color: routeColor,
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 4.5,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Calles_municipio_2');
+        map.getPane('pane_Calles_municipio_2').style.zIndex = 402;
+        map.getPane('pane_Calles_municipio_2').style['mix-blend-mode'] = 'normal';
+        var layer_Calles_municipio_2 = new L.geoJson(json_Calles_municipio_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Calles_municipio_2',
+            layerName: 'layer_Calles_municipio_2',
+            pane: 'pane_Calles_municipio_2',
+            onEachFeature: pop_Calles_municipio_2,
+            style: style_Calles_municipio_2_0,
+        });
+        bounds_group.addLayer(layer_Calles_municipio_2);
+        map.addLayer(layer_Calles_municipio_2);
+        function pop_CUT_vivienda_3(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['municipio'] !== null ? autolinker.link(String(feature.properties['municipio']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CUT_vivienda_3_0() {
+            return {
+                pane: 'pane_CUT_vivienda_3',
+                opacity: 1,
+                color: 'rgba(255,0,97,1.0)',
+                dashArray: '6.0,3.0',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 3.0, 
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
+        map.createPane('pane_CUT_vivienda_3');
+        map.getPane('pane_CUT_vivienda_3').style.zIndex = 403;
+        map.getPane('pane_CUT_vivienda_3').style['mix-blend-mode'] = 'normal';
+        var layer_CUT_vivienda_3 = new L.geoJson(json_CUT_vivienda_3, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_CUT_vivienda_3',
+            layerName: 'layer_CUT_vivienda_3',
+            pane: 'pane_CUT_vivienda_3',
+            onEachFeature: pop_CUT_vivienda_3,
+            style: style_CUT_vivienda_3_0,
+        });
+        bounds_group.addLayer(layer_CUT_vivienda_3);
+        map.addLayer(layer_CUT_vivienda_3);
+        function pop_CUT_POT_4(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['id'] !== null ? autolinker.link(String(feature.properties['id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CUT_POT_4_0() {
+            return {
+                pane: 'pane_CUT_POT_4',
+                opacity: 1,
+                color: 'rgba(20,89,149,1.0)',
+                dashArray: '6.0,3.0',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 3.0, 
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
+        map.createPane('pane_CUT_POT_4');
+        map.getPane('pane_CUT_POT_4').style.zIndex = 404;
+        map.getPane('pane_CUT_POT_4').style['mix-blend-mode'] = 'normal';
+        var layer_CUT_POT_4 = new L.geoJson(json_CUT_POT_4, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_CUT_POT_4',
+            layerName: 'layer_CUT_POT_4',
+            pane: 'pane_CUT_POT_4',
+            onEachFeature: pop_CUT_POT_4,
+            style: style_CUT_POT_4_0,
+        });
+        bounds_group.addLayer(layer_CUT_POT_4);
+        map.addLayer(layer_CUT_POT_4);
+        setBounds();
+        
+        // Esperar a que leaflet-textpath esté disponible
+        setTimeout(function() {
+            // Agregar labels que siguen la línea para cada calle
+            var processedStreets = {}; // Para rastrear qué calles ya tienen label
+            var streetLabels = []; // Array para almacenar los labels
+            
+            layer_Calles_municipio_2.eachLayer(function(layer) {
+                var streetName = layer.feature.properties['name'];
+                var routeColor = getRouteColor(streetName);
+                
+                // Solo agregar label si esta calle no ha sido procesada antes
+                if (streetName && !processedStreets[streetName]) {
+                    try {
+                        // Crear el texto que sigue la línea
+                        if (layer.setText) {
+                            layer.setText('  ' + streetName + '  ', {
+                                repeat: true,
+                                offset: 0,
+                                attributes: {
+                                    'font-size': '14px',
+                                    'font-family': 'Century Gothic, sans-serif',
+                                    'font-weight': 'bold',
+                                    'fill': 'white',
+                                    'stroke': routeColor,
+                                    'stroke-width': '4px',
+                                    'stroke-opacity': '1',
+                                    'paint-order': 'stroke fill'
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.log('Error setting text for street:', streetName, e);
+                    }
+                    
+                    streetLabels.push({
+                        layer: layer,
+                        streetName: streetName
+                    });
+                    
+                    // Marcar esta calle como procesada
+                    processedStreets[streetName] = true;
+                }
+            });
+            
+            // Guardar referencia global para uso en la leyenda
+            window.streetLabels = streetLabels;
+            
+        }, 1000); // Esperar 1 segundo para que la librería esté completamente cargada
+        
+        // Funcionalidad de la leyenda para mostrar/ocultar capas
+        var streetLayers = {};
+        
+        // Agrupar las capas por nombre de calle
+        layer_Calles_municipio_2.eachLayer(function(layer) {
+            var streetName = layer.feature.properties['name'];
+            if (!streetLayers[streetName]) {
+                streetLayers[streetName] = [];
+            }
+            streetLayers[streetName].push(layer);
+        });
+        
+        // Agregar event listeners a los checkboxes de calles
+        document.querySelectorAll('.legend-item[data-street] input[type="checkbox"]').forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                var streetName = this.closest('.legend-item').getAttribute('data-street');
+                var layers = streetLayers[streetName];
+                
+                if (layers) {
+                    layers.forEach(function(layer) {
+                        if (checkbox.checked) {
+                            // Mostrar la calle
+                            if (!map.hasLayer(layer)) {
+                                map.addLayer(layer);
+                            }
+                            layer.setStyle({opacity: 1});
+                            
+                            // Mostrar el label si existe
+                            if (window.streetLabels) {
+                                var labelInfo = window.streetLabels.find(function(item) {
+                                    return item.streetName === streetName && item.layer === layer;
+                                });
+                                if (labelInfo && labelInfo.layer.setText) {
+                                    var routeColor = getRouteColor(streetName);
+                                    try {
+                                        labelInfo.layer.setText('  ' + streetName + '  ', {
+                                            repeat: true,
+                                            offset: 0,
+                                            attributes: {
+                                                'font-size': '14px',
+                                                'font-family': 'Century Gothic, sans-serif',
+                                                'font-weight': 'bold',
+                                                'fill': 'white',
+                                                'stroke': routeColor,
+                                                'stroke-width': '4px',
+                                                'stroke-opacity': '1',
+                                                'paint-order': 'stroke fill'
+                                            }
+                                        });
+                                    } catch (e) {
+                                        console.log('Error updating text for street:', streetName, e);
+                                    }
+                                }
+                            }
+                        } else {
+                            // Ocultar la calle
+                            layer.setStyle({opacity: 0});
+                            
+                            // Ocultar el label
+                            if (window.streetLabels) {
+                                var labelInfo = window.streetLabels.find(function(item) {
+                                    return item.streetName === streetName && item.layer === layer;
+                                });
+                                if (labelInfo && labelInfo.layer.setText) {
+                                    try {
+                                        labelInfo.layer.setText(null);
+                                    } catch (e) {
+                                        console.log('Error hiding text for street:', streetName, e);
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        });
+        
+        // Agregar event listeners a los checkboxes de CUT
+        document.getElementById('check-cut-vivienda').addEventListener('change', function() {
+            if (this.checked) {
+                map.addLayer(layer_CUT_vivienda_3);
+            } else {
+                map.removeLayer(layer_CUT_vivienda_3);
+            }
+        });
+        
+        document.getElementById('check-cut-pot').addEventListener('change', function() {
+            if (this.checked) {
+                map.addLayer(layer_CUT_POT_4);
+            } else {
+                map.removeLayer(layer_CUT_POT_4);
+            }
+        });
+        
+        // También agregar funcionalidad de click en toda la línea de la leyenda
+        document.querySelectorAll('.legend-item').forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                if (e.target.type !== 'checkbox') {
+                    var checkbox = this.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+        </script>
+    </body>
+</html>
